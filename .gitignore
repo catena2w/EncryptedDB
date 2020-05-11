@@ -1,0 +1,14 @@
+# IDE/Editor files
+.idea
+.ensime
+.ensime_cache/
+scorex.yaml
+
+# scala build folders
+target
+
+# dotfiles
+.editorconfig
+
+# logs
+*.log
