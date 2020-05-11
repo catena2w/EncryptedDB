@@ -1,6 +1,6 @@
 package org.encrypteddb.utils
 
-trait TestUtils extends FileUtils with WordUtils {
+trait TestUtils extends DynRHUtils {
 
   def time[R](block: => R): (Float, R) = {
     val t0 = System.nanoTime()

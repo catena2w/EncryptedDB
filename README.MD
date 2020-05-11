@@ -3,9 +3,24 @@
 To implement a SSE scheme in a database and then explain the security features ( a write up) - explaining why this SSE works and why it's secure.
 Deadline: 1 week.
 
-## Overview
+## SSE overview
 
 Most of this overview is based on thes SoK paper [FVYSHGSMC17].
+
+[CJJJKRS14] implements a dynamic scheme, giving optimal leakage, server size, search computation, and parallelism in search.
+Supports only single keyword search, but supports terabyte-scale databases containing tens of billions of indexed record/keyword pairs.
+
+## [CJJJKRS14] overview
+
+For every record/keyword pair a psfreudorandom label is created using a secret key, and then a map from label to an encrypred record indentifier is stored. Labels are cretead in such a way, that for every keyword a client can create a keyword-specific short key, that allows a server to perform a search.
+
+
+**Updates :**
+
+To perform an update, a client compute the labels for the new data to be added and send it to a server. 
+To support deletions server maintain a revocation list that allows him to filter out results that should 
+be deleted. To actually reclaim space we re-encrypt the entire database periodically.
+
 
 
 ## References

@@ -11,9 +11,9 @@ trait WordUtils {
   // fix our dictionary to have 1000 words
   lazy val dictionary: Seq[String] = Gen.listOfN(DictionarySize, randomWordGenerator).sample.get
 
-  lazy val keywordGen: Gen[String] = Gen.oneOf(dictionary)
+  lazy val dictionaryWordGen: Gen[String] = Gen.oneOf(dictionary)
 
   // generate a sentence with words from dictionary
-  lazy val sentenceGen: Gen[String] = Gen.nonEmptyListOf(keywordGen).map(_.mkString(" "))
+  lazy val docGen: Gen[String] = Gen.nonEmptyListOf(dictionaryWordGen).map(_.mkString(" "))
 
 }
