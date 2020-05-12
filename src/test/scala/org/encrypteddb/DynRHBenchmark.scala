@@ -1,9 +1,6 @@
 package org.encrypteddb
 
-import org.crypto.sse._
 import org.encrypteddb.utils.TestUtils
-
-import scala.util.Random
 
 object DynRHBenchmark extends App with TestUtils {
   val StartDocumentsNumber: Int = 10000
@@ -12,17 +9,22 @@ object DynRHBenchmark extends App with TestUtils {
   val UpdateSteps: Int = 100
 
   // initialization
+  val client: EDBClient = EDBClient.create()
+  val server: EDBServer = new EDBServer
   val initDocs = (0 until StartDocumentsNumber).map(_ => docGen.sample.get)
-  val (initTime, db) = time(EncryptedDB.create(initDocs))
+  val (initTime, _) = time(server.insert(client.insert(initDocs).get))
 
   println(s"Number of documents,Update time (ms),Search time (ms)")
   // Update phase
   (0 until UpdateSteps) foreach { i =>
     val docs = (0 until UpdateDocumentsNumber).map(_ => docGen.sample.get)
-    val (updateTime, _) = time(db.insert(docs))
+    val (updateTime, _) = time(server.insert(client.insert(docs).get))
 
     val searchTime = time {
-      (0 until KeywordSearches) foreach (_ => db.search(dictionaryWordGen.sample.get))
+      (0 until KeywordSearches) foreach { _ =>
+        val searchToken = client.search(dictionaryWordGen.sample.get)
+        server.search(searchToken)
+      }
     }._1 / KeywordSearches
 
     println(s"${StartDocumentsNumber + UpdateDocumentsNumber * i},$updateTime,$searchTime")

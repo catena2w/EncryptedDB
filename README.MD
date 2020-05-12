@@ -4,30 +4,42 @@ This repository is the solution to the following challenge:
 *Implement an SSE scheme in a database and then explain the security features (a write up) - 
 explaining why this SSE works and why it's secure.*
 
-This contains a Scala wrapper over the [CJJJKRS14] algorithm from [Clusion](https://github.com/encryptedsystems/Clusion)
-framework, as well as a simple [benchmark](src/test/scala/org/encrypteddb/DynRHBenchmark.scala) and several
-[property-based tests](src/test/scala/org/encrypteddb/DynRHSpec.scala) to ensure that
-the Clusion implementation is correct.
+A solution is based on an algorithm from [CJJJKRS14], implemented in [Clusion](https://github.com/encryptedsystems/Clusion)
+framework (Clusion version from my [unmerged PR](https://github.com/encryptedsystems/Clusion/pull/17).
+It contains the [client](src/main/scala/org/encrypteddb/EDBClient.scala) which generates update and search tokens using 
+his secret key, and the [server](src/main/scala/org/encrypteddb/EDBServer.scala) which performs operations over the 
+encrypted database without an access to secret key and a raw data. 
+
+Test folder contain a simple [benchmark](src/test/scala/org/encrypteddb/DynRHBenchmark.scala) to ensure the performance 
+properties of the implementation, as well as several [property-based tests](src/test/scala/org/encrypteddb/DynRHSpec.scala) 
+to ensure it's correctness.
  
 Tests may be started by the following command:
 ```
 sbt test
 ```
 
-That latter of this readme file explains, why the concrete SEE algorithm was chosen and provides a brief overview, how does it work and why is it secure. 
+That latter of this readme file explains, why the concrete SEE algorithm was chosen and provides a brief overview,
+ how does it work and why is it secure. 
 
 ### Choice of SSE scheme
 
-!!!TODO
+SSE scheme choice was mainly defined by the SoK paper [FVYSHGSMC17], updates of the protocols presented there and review
+of open-sourced implementations.
+While there are a lot of promising schemes designed, their accurate implementation may require a lot of time,
+whereas hasty development may lead to implementation-specific attacks.
 
-Most of this overview is based on the SoK paper [FVYSHGSMC17].
-
-[CJJJKRS14] implements a dynamic scheme, giving optimal leakage, server size, search computation, and parallelism in search.
-Supports only single keyword search, but supports terabyte-scale databases containing tens of billions of indexed record/keyword pairs.
+Choosing from open-source implementations, the Clusion framework looks the most promising. 
+It contains several schemes implementations, from which the [CJJJKRS14] scheme was chosen, as far as it is 
+a dynamic scheme, giving optimal leakage, server size, search computation, and parallelism in search.
+While it only supports a single keyword search, it might be enough for a lot of applications, whereas it's 
+performance properties allow to supports terabyte-scale databases containing tens of billions of indexed
+record/keyword pairs.
 
 ### How it works?
 
-A detailed description of the SSE is provided in Sections 3-4 in the base paper [CJJJKRS14], in this section I'll provide a high-level intuition, how does it work.
+A detailed description of the SSE is provided in Sections 3-4 in the base paper [CJJJKRS14], in this section I'll 
+provide a high-level intuition, how does it work.
 
 **Basic construction**
 
