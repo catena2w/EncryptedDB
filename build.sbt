@@ -11,6 +11,7 @@ val poiVersion = "3.15-beta1"
 libraryDependencies ++= Seq(
 
   // test libraries
+  "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
   "org.scalatest" %% "scalatest" % "3.0.+" % "test",
   "org.scalacheck" %% "scalacheck" % "1.13.+" % "test",
 

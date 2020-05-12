@@ -14,6 +14,9 @@ trait WordUtils {
   lazy val dictionaryWordGen: Gen[String] = Gen.oneOf(dictionary)
 
   // generate a sentence with words from dictionary
-  lazy val docGen: Gen[String] = Gen.nonEmptyListOf(dictionaryWordGen).map(_.mkString(" "))
+  lazy val docGen: Gen[(String, String)] = for {
+    id <- randomWordGenerator
+    content <- Gen.nonEmptyListOf(dictionaryWordGen).map(_.mkString(" "))
+  } yield (id, content)
 
 }

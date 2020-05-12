@@ -8,16 +8,13 @@ import scala.util.Try
 
 trait FileUtils {
 
-  protected val randomPrefixLength = 10
-
-  val basePath: Path = java.nio.file.Files.createTempDirectory(s"encrdb-${System.nanoTime()}")
+  protected val basePath: Path = java.nio.file.Files.createTempDirectory(s"encrdb-${System.nanoTime()}")
 
   sys.addShutdownHook {
     remove(basePath)
   }
 
-  def createFileWithContent(dir: java.io.File, content: String): Try[java.io.File] = Try {
-    val fileName = scala.util.Random.alphanumeric.take(randomPrefixLength).mkString
+  protected def createFileWithContent(dir: java.io.File, fileName: String, content: String): Try[java.io.File] = Try {
     val file = java.nio.file.Files.createTempFile(dir.toPath, fileName, ".tmp").toFile
     val pw = new PrintWriter(file)
     pw.write(content)

@@ -11,22 +11,18 @@ object DynRHBenchmark extends App with TestUtils {
   val KeywordSearches: Int = 1000
   val UpdateSteps: Int = 100
 
-  // generate random secret key
-  val sk: Array[Byte] = RR2Lev.keyGen(256, Random.nextString(256), "salt/salt", 100000)
-
   // initialization
-  val (initTime, emm) = time(initializeDynRH(sk, StartDocumentsNumber))
+  val initDocs = (0 until StartDocumentsNumber).map(_ => docGen.sample.get)
+  val (initTime, db) = time(EncryptedDB.create(initDocs))
 
   println(s"Number of documents,Update time (ms),Search time (ms)")
   // Update phase
   (0 until UpdateSteps) foreach { i =>
     val docs = (0 until UpdateDocumentsNumber).map(_ => docGen.sample.get)
-    val (updateTime, _) = time(updateDynRH(sk, emm, docs))
+    val (updateTime, _) = time(db.insert(docs))
 
     val searchTime = time {
-      (0 until KeywordSearches) foreach { _ =>
-        searchDynRH(sk, emm, dictionaryWordGen.sample.get)
-      }
+      (0 until KeywordSearches) foreach (_ => db.search(dictionaryWordGen.sample.get))
     }._1 / KeywordSearches
 
     println(s"${StartDocumentsNumber + UpdateDocumentsNumber * i},$updateTime,$searchTime")
