@@ -5,8 +5,8 @@ This repository is the solution to the following challenge:
 *Implement an SSE scheme in a database and then explain the security features (a write up) - 
 explaining why this SSE works and why it's secure.*
 
-A solution is based on an algorithm from [CJJJKRS14], implemented in [Clusion](https://github.com/encryptedsystems/Clusion)
-framework (Clusion version from my [unmerged PR](https://github.com/encryptedsystems/Clusion/pull/17).
+A solution is based on an algorithm from [[CJJJKRS14]], implemented in [Clusion](https://github.com/encryptedsystems/Clusion)
+framework (Clusion version from my [unmerged PR](https://github.com/encryptedsystems/Clusion/pull/17)).
 It contains the [client](src/main/scala/org/encrypteddb/EDBClient.scala) which generates update and search tokens using 
 his secret key, and the [server](src/main/scala/org/encrypteddb/EDBServer.scala) which performs operations over the 
 encrypted database without an access to secret key and a raw data. 
@@ -25,36 +25,41 @@ That latter of this readme file explains, why the concrete SEE algorithm was cho
 
 ### Choice of SSE scheme
 
-SSE scheme choice was mainly defined by the SoK paper [FVYSHGSMC17], updates of the protocols presented there and review
+SSE scheme choice was mainly defined by the SoK paper [[FVYSHGSMC17]], updates of the protocols presented there and review
 of open-sourced implementations.
 While there are a lot of promising schemes designed, their accurate implementation may require a lot of time,
-whereas hasty development may lead to implementation-specific attacks.
+whereas hasty development may lead to implementation-specific attacks, thus it was decided to use existing 
+open-source implementation.
 
-Choosing from open-source implementations, the Clusion framework looks the most promising. 
-It contains several schemes implementations, from which the [CJJJKRS14] scheme was chosen, as far as it is 
-a dynamic scheme, giving optimal leakage, server size, search computation, and parallelism in search.
+From open-source implementations, the Clusion framework looks the most promising. 
+It contains several schemes implementations, from which the [[CJJJKRS14]] scheme was chosen. 
+It is a performance-focused SSE scheme, that allows performing database updates, giving optimal leakage, server size,
+search computation, and parallelism in search.
 While it only supports a single keyword search, it might be enough for a lot of applications, whereas it's 
 performance properties allow to supports terabyte-scale databases containing tens of billions of indexed
 record/keyword pairs.
-Finally, it might be extended to support more complex search schemes if needed, e.g. boolean search [KM17],
-multi-user SSE settings [JJKRS13] or SQL-like syntax [KM18].
+Finally, it might be extended to support more complex search schemes if needed, e.g. boolean search [[KM17]],
+multi-user SSE settings [[JJKRS13]] or SQL-like syntax [[KM18]].
 
 ### How it works?
 
-A detailed description of the SSE is provided in Sections 3-4 in the base paper [CJJJKRS14], in this section I'll 
+A detailed description of the SSE is provided in Sections 3-4 in the base paper [[CJJJKRS14]], in this section I'll 
 provide a high-level intuition, how does it work.
 
 **Basic construction**
 
 The main idea of this SSE scheme is very simple and is shown in [Figure 1](#Figure1).
 
-To build the encrypted database, a client chooses a key `K` and uses it to derive 
-for every document/keyword pair a pseudorandom label `l=PRF(PRF(K,1||w),c)` 
-and an encrypted record identifier `d=Enc(PRF(K,2||w),id)`,
-where `w` is a keyword, `c` is a document index, `PRF` is a pseudorandom function and `Enc` is symmetric encryption algorithm.
-After all of the results have been processed it builds the dictionary D from `(l,d)` pairs, which becomes the server’s index.
+To build the encrypted database, a client chooses a secret key `K` and uses it to derive 
+a pair of keys `K1=PRF(K,1||w)`, `K2=PRF(K,2||w)` for every keyword `w`. 
+Then for every document/keyword pair it calculates a pseudorandom label `l=PRF(K1,c)` 
+and an encrypted record identifier `d=Enc(K2,id)`,
+where `c` is a document index, `id` is document identifier, `PRF` is a pseudorandom function 
+and `Enc` is symmetric encryption algorithm.
+After all of the results have been processed it builds the dictionary D with `(l,d)` pairs, 
+which becomes the server’s index.
 
-To search for keyword `w`, the client re-derives the keys for `w` and sends them to the server, 
+To search for keyword `w`, the client re-derives the keys `K1`,`K2` for `w` and sends them to the server, 
 who recomputes the labels and retrieves and decrypts the results.
 
 ![Figure 1. Basic construction](assets/basic_construction.png)
@@ -62,31 +67,32 @@ who recomputes the labels and retrieves and decrypts the results.
 <div id="#Figure1"></div>
 
 Note, that this construction only takes care of the search over the encrypted documents.
-Actual implementation will require the documents storage with no additional leakage beyond
+Actual implementation will also require the documents storage with no additional leakage beyond
 the number and length of the payloads.
 
-As far as the server does not know the secret `K`, it can not derive `K1` and `K2` by himself and perform a search over the documents.
+As far as the server does not know the secret `K`, it can not derive `K1` and `K2` by himself 
+and perform a search over the documents.
 Thus, in the beginning, it only knows the number of document/keyword pairs, while during every client request ids 
-of documents with some keyword, unknown to the server, leaks.
+of documents with some (unknown to the server) keyword leaks.
 
 **Efficiency improvements**
 
 The encrypted database consists of a dictionary holding identifier/ciphertexts pairs.
 Searching is fully parallelizable, as each processor can independently compute labels for 
 all `c` and retrieve/decrypt the corresponding ciphertext.
-However, during a search for w, basic construction performs `|DB(w)|`
+However, during a search for `w`, the basic construction performs `|DB(w)|`
 retrievals from the dictionary, each with an independent and random-looking tag,
 that will perform relatively poorly when the dictionary is stored on disk.
 
-Section 3.1 of [CJJJKRS14] contains several improvements of the basic construction, 
-resulting in a much more efficient scheme.
-First, it groups identifiers to batches of size `B`, allowing to make roughly `B` times less
-of disk accesses. But `B` cannot be too big, otherwise, it will result in too much padding
+Section 3.1 of [[CJJJKRS14]] contains several improvements of the basic construction, 
+resulting in a much more efficient scheme:
+- First, it groups identifiers to batches of size `B`, allowing to make roughly `B` times less
+of disk accesses. But `B` cannot be too big, or it will result in too much padding
 when the dataset contains many keywords only appearing in a few ≪ `B` documents.
-Second, it uses the dictionary to store encrypted blocks of `b` pointers to these encrypted blocks `B`.
-Finally, it utilizes the observation, that in real data sets the number of records matched by different 
+- Second, it uses the dictionary to store encrypted blocks of `b` pointers to these encrypted blocks `B`.
+- Finally, it utilizes the observation, that in real data sets the number of records matched by different 
 keywords will vary by several orders of magnitude.
-The final *P2Lev* variant classifies the sets DB(w) as small (≤ B), medium (≤ Bb), or large ($≤ bB^2$). 
+The final *P2Lev* variant classifies the sets DB(w) as small (≤ B), medium (≤ Bb), or large (≤ bB<sup>2</sup>). 
 Small sets are stored in `B` packs, without any pointers.
 Medium sets are stored with a block of pointers in the dictionary and then blocks of identifiers in the array.
 Big sets are stored as a block of pointers that point to another block of pointers in the array,
@@ -100,7 +106,7 @@ that showed a constant search time dependent on th DB size.
  
 **Dynamic Constructions**
 
-In Section 4 of [CJJJKRS14] the efficient *P2Lev* construction is improved to support updates.
+In Section 4 of [[CJJJKRS14]] the efficient *P2Lev* construction is improved to support updates.
 To perform an update, a client computes the labels for the new data to be added and sends it to a server. 
 To support the deletions server maintains a revocation list that allows him to filter out results that should be deleted.
 To actually reclaim space the entire database is re-encrypted periodically.
@@ -109,10 +115,9 @@ To actually reclaim space the entire database is re-encrypted periodically.
 
 **Scheme security**
 
-Chosen SSE scheme is provably secure (formal proofs are in Sections 3-4 of [CJJJKRS14]), designed by known authors, 
+Chosen SSE scheme is provably secure (formal proofs are in Sections 3-4 of [[CJJJKRS14]]), designed by known authors, 
 presented at specialized security conferences, and is widely discussed in the community. 
-The security model is formalized using code-based games, following [CGKO06] security definitions. 
-Authors prove that an adversary’s view during an attack can be simulated given the leakage profile. 
+The security model is formalized using code-based games, following classical [[CGKO06]] security definitions. 
 
 It was shown, that during database creation, the basic variant only leaks the number of document/keyword pairs `N`,
 while the most efficient *P2Lev* construction leaks parameters `B` and `b`, as well as the number of keywords `m`. 
@@ -120,7 +125,7 @@ During the search of keyword `w`, the scheme leaks the search and access pattern
 identifiers of data items returned across multiple queries.
 
 This leak provides some useful information for the adversary and more secure SSE schemes exist.
-However the design of such systems is a balancing act between security, functionality, performance, and usability,
+However, the design of such systems is a balancing act between security, functionality, performance, and usability,
 and this kind of leakage may be considered to be acceptable for most of the cases. 
 
 **Implementation security**
@@ -131,11 +136,11 @@ Both are considered to be secure right now, and their implementation is taken fr
 [BouncyCastle](https://www.bouncycastle.org/) library. 
 
 The SSE design contains a lot of pitfalls to avoid.
-For example, the encrypted database should be sorted by labels, or it will leak additional information otherwise.
-The Clusion framework is implemented by the paper authors, so it hopefully all these possible 
-implementation-specific issues are considered.
+For example, the encrypted database should be sorted by labels, or it will leak additional information to the server.
+The Clusion framework is implemented by the paper authors, so it hopefully considers all these possible 
+implementation-specific issues.
 However it should be noticed, that Clusion code quality is relatively bad, it does not contain any documentation
-and unit tests, so it should not be considered to be production-ready.
+and unit tests, so it should not be considered as production-ready.
 
 
 ## References
@@ -147,7 +152,7 @@ and unit tests, so it should not be considered to be production-ready.
  by S. Kamara and T. Moataz. 
 
 3. \[[FVYSHGSMC17](https://arxiv.org/pdf/1703.02014.pdf)\]: *SoK: Cryptographically Protected Database Search* 
-by B. Fuller, M. Varia, A, Yerukhimovich, E. Shen, A. Hamlin, V. Gadepally, R. Shay, J. Mitchell and R. Cunningham
+by B. Fuller, M. Varia, A, Yerukhimovich, E. Shen, A. Hamlin, V. Gadepally, R. Shay, J. Mitchell, and R. Cunningham
 
 4. \[[CGKO06](https://eprint.iacr.org/2006/210.pdf)\]: *Searchable symmetric encryption: improved definitions and efficient constructions* 
    by R. Curtmola, J. A. Garay, S. Kamara, and R. Ostrovsky.

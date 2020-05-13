@@ -28,7 +28,7 @@ class DynRHSpec extends PropertySpec {
     }
   }
 
-  property("Add document with a keyword") {
+  property("Inserted document should be found by it's keywords") {
     forAll(docGen) { doc =>
       val content = doc._2
       // search before document addition
