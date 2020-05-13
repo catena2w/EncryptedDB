@@ -8,8 +8,7 @@ import com.typesafe.scalalogging.StrictLogging
 import org.crypto.sse._
 import org.encrypteddb.utils.FileUtils
 
-import scala.collection.JavaConverters._
-import scala.util.{Random, Try}
+import scala.util.Random
 
 /**
   * A EDB client, that holds secret key `sk` and generates update and search tokens
@@ -19,12 +18,27 @@ import scala.util.{Random, Try}
 class EDBClient(sk: Array[Byte]) extends FileUtils with StrictLogging {
 
   /**
+    * Generates a delete token, that will exclude `index` document from `keyword` search result
+    *
+    * @param keyword - keyword for which delete operation will be performed
+    * @param index   - index of the document within keyword search results
+    * @return token that will allow server to filter out deleted document
+    */
+  def delete(keyword: String, index: Int): DeleteToken = {
+    val deletions = new util.ArrayList[Integer]
+    deletions.add(index.toInt)
+    val key1 = DynRH.delToken(sk, keyword)
+    DeleteToken(key1, List(index))
+  }
+
+
+  /**
     * Parse all documents from provided directory and generate update token to them
     *
     * @param dir - directory with documents to insert
     * @return token that will allow server to insert these documents
     */
-  def insert(dir: File): Try[InsertToken] = Try {
+  def insert(dir: File): InsertToken = {
     // Empty the previous multimap to avoid adding the same set of documents for every update
     TextExtractPar.lp1 = ArrayListMultimap.create()
     val fileList = new util.ArrayList[File]
@@ -48,7 +62,7 @@ class EDBClient(sk: Array[Byte]) extends FileUtils with StrictLogging {
     documents foreach { doc =>
       createFileWithContent(insertDir, doc._1, doc._2)
     }
-    insert(insertDir).get
+    insert(insertDir)
   }
 
   /**

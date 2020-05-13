@@ -27,7 +27,7 @@ trait Generators {
     Gen.choose(minSize, maxSize) flatMap { sz => Gen.listOfN(sz, Arbitrary.arbitrary[Byte]).map(_.toArray) }
   }
 
-  lazy val updateTokenGen: Gen[InsertToken] = for {
+  lazy val insertTokenGen: Gen[InsertToken] = for {
     key <- Arbitrary.arbitrary[String]
     value <- genBoundedBytes(1, 64)
   } yield {

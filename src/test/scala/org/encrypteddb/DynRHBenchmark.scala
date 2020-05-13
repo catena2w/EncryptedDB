@@ -12,13 +12,13 @@ object DynRHBenchmark extends App with TestUtils {
   val client: EDBClient = EDBClient.create()
   val server: EDBServer = EDBServer.create()
   val initDocs = (0 until StartDocumentsNumber).map(_ => docGen.sample.get)
-  val (initTime, _) = time(server.insert(client.insert(initDocs).get))
+  val (initTime, _) = time(server.update(client.insert(initDocs)))
 
   println(s"Number of documents,Update time (ms),Search time (ms)")
   // Update phase
   (0 until UpdateSteps) foreach { i =>
     val docs = (0 until UpdateDocumentsNumber).map(_ => docGen.sample.get)
-    val (updateTime, _) = time(server.insert(client.insert(docs).get))
+    val (updateTime, _) = time(server.update(client.insert(docs)))
 
     val searchTime = time {
       (0 until KeywordSearches) foreach { _ =>

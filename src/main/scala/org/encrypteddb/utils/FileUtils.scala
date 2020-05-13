@@ -1,6 +1,6 @@
 package org.encrypteddb.utils
 
-import java.io.{IOException, PrintWriter}
+import java.io.{File, IOException, PrintWriter}
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor}
 
@@ -19,7 +19,7 @@ trait FileUtils {
   }
 
   protected def createFileWithContent(dir: java.io.File, fileName: String, content: String): Try[java.io.File] = Try {
-    val file = java.nio.file.Files.createTempFile(dir.toPath, fileName, ".tmp").toFile
+    val file = new File(dir.getAbsolutePath + File.separator + fileName)
     val pw = new PrintWriter(file)
     pw.write(content)
     pw.close()
