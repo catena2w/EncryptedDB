@@ -10,7 +10,7 @@ object DynRHBenchmark extends App with TestUtils {
 
   // initialization
   val client: EDBClient = EDBClient.create()
-  val server: EDBServer = new EDBServer
+  val server: EDBServer = EDBServer.create()
   val initDocs = (0 until StartDocumentsNumber).map(_ => docGen.sample.get)
   val (initTime, _) = time(server.insert(client.insert(initDocs).get))
 

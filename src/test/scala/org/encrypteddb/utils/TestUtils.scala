@@ -1,6 +1,6 @@
 package org.encrypteddb.utils
 
-trait TestUtils extends WordUtils {
+trait TestUtils extends Generators {
 
   def time[R](block: => R): (Float, R) = {
     val t0 = System.nanoTime()

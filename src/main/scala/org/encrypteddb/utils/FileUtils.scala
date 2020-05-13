@@ -6,6 +6,10 @@ import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor}
 
 import scala.util.Try
 
+/**
+  * Trait is used to satisfy Clusion interfaces, that requires files on input.
+  * It generates files in temp directory, and delete the on exit
+  */
 trait FileUtils {
 
   protected val basePath: Path = java.nio.file.Files.createTempDirectory(s"encrdb-${System.nanoTime()}")

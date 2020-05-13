@@ -14,7 +14,7 @@ class DynRHSpec extends PropertySpec {
     */
   val initDocs: Seq[(String, String)] = (0 until 100).map(_ => docGen.sample.get)
   val client: EDBClient = EDBClient.create()
-  val server: EDBServer = new EDBServer
+  val server: EDBServer = EDBServer.create()
   server.insert(client.insert(initDocs).get)
   val keywords: List[String] = TextExtractPar.lp1.keySet().asScala.toList
 
@@ -51,6 +51,12 @@ class DynRHSpec extends PropertySpec {
           docsAfterUpdate shouldBe 0
         }
       }
+    }
+  }
+
+  property("Server should insert random tokens") {
+    forAll(updateTokenGen) { token =>
+      server.insert(token)
     }
   }
 

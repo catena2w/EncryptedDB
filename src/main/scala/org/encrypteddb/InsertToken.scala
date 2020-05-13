@@ -2,4 +2,4 @@ package org.encrypteddb
 
 import com.google.common.collect.TreeMultimap
 
-case class UpdateToken(token: TreeMultimap[String, Array[Byte]])
+case class InsertToken(token: TreeMultimap[String, Array[Byte]])
