@@ -12,8 +12,8 @@ libraryDependencies ++= Seq(
 
   // test libraries
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
-  "org.scalatest" %% "scalatest" % "3.0.+" % "test",
-  "org.scalacheck" %% "scalacheck" % "1.13.+" % "test",
+  "org.scalatest" %% "scalatest" % "3.0.8" % "test",
+  "org.scalacheck" %% "scalacheck" % "1.13.5" % "test",
 
   // Clusion and its's dependencies
   "org.crypto.sse" % "Clusion" % "1.0-SNAPSHOT" from s"file://${baseDirectory.value}/project/libs/Clusion-1.0-SNAPSHOT.jar",

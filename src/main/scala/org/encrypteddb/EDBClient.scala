@@ -31,7 +31,6 @@ class EDBClient(sk: Array[Byte]) extends FileUtils with StrictLogging {
     DeleteToken(key1, List(index))
   }
 
-
   /**
     * Parse all documents from provided directory and generate update token to them
     *
