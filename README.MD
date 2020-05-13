@@ -1,6 +1,7 @@
-## Encrypted DB
+## Encrypted DB [![Scala CI](https://github.com/catena2w/EncryptedDB/workflows/Scala%20CI/badge.svg)](https://github.com/catena2w/EncryptedDB/actions?query=workflow%3A%22Scala+CI%22)
 
 This repository is the solution to the following challenge:
+
 *Implement an SSE scheme in a database and then explain the security features (a write up) - 
 explaining why this SSE works and why it's secure.*
 
@@ -67,8 +68,6 @@ the number and length of the payloads.
 As far as the server does not know the secret `K`, it can not derive `K1` and `K2` by himself and perform a search over the documents.
 Thus, in the beginning, it only knows the number of document/keyword pairs, while during every client request ids 
 of documents with some keyword, unknown to the server, leaks.
-
-!! TODO check
 
 **Efficiency improvements**
 
