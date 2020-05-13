@@ -35,6 +35,8 @@ a dynamic scheme, giving optimal leakage, server size, search computation, and p
 While it only supports a single keyword search, it might be enough for a lot of applications, whereas it's 
 performance properties allow to supports terabyte-scale databases containing tens of billions of indexed
 record/keyword pairs.
+Finally, it might be extended to support more complex search schemes if needed, e.g. boolean search [KM17],
+multi-user SSE settings [JJKRS13] or SQL-like syntax [KM18].
 
 ### How it works?
 
@@ -104,74 +106,64 @@ To perform an update, a client computes the labels for the new data to be added 
 To support the deletions server maintains a revocation list that allows him to filter out results that should be deleted.
 To actually reclaim space the entire database is re-encrypted periodically.
 
-**Further improvements**
-
-!!!TODO
-
-- May be extended to support more complex searches, like boolean search [KM17],  multi-user SSE settings [JJKRS13] or SQL-like syntax [KM18].
-
-
 ### Why is it secure?
-!!!TODO
 
-- Basic wariant only leaks number of document/keyword pairs `N`, while the most efficient *P2Lev* construction leaks 
-parameters `B` and `b` as well as number of keywords `m`. This is bad, but ok)
+**Scheme security**
 
-- Model security is formalized with using code-based games, following [CGKO06] security definitions. 
-Authors proves that an adversary’s view during an attack can be simulated given the leakage profile. 
-- Proofs are done under assumptions, that underlying cryptography (pseudorandom functions and symmetric encryption) is secure.
-TODO  notes on underlying crypto security (theory and implementation).
-- Proofs are done for search and indexes only and does not model the storage of the actual document payloads. 
+Chosen SSE scheme is provably secure (formal proofs are in Sections 3-4 of [CJJJKRS14]), designed by known authors, 
+presented at specialized security conferences, and is widely discussed in the community. 
+The security model is formalized using code-based games, following [CGKO06] security definitions. 
+Authors prove that an adversary’s view during an attack can be simulated given the leakage profile. 
 
-- An adversary receives EDB and can adaptively make Update and Search queries.
-- It is important
-  that L is sorted by the labels before being loaded into the dictionary, or that the dictionary satisfies history
-  independence - Without one of these, the scheme will leak information about the order in which the input
-  was processed.
+It was shown, that during database creation, the basic variant only leaks the number of document/keyword pairs `N`,
+while the most efficient *P2Lev* construction leaks parameters `B` and `b`, as well as the number of keywords `m`. 
+During the search of keyword `w`, the scheme leaks the search and access patterns: equalities of queries and
+identifiers of data items returned across multiple queries.
 
-- review attacks from https://scholar.google.ru/scholar?cites=345785687530611374&as_sdt=2005&sciodt=0,5&hl=ru
+This leak provides some useful information for the adversary and more secure SSE schemes exist.
+However the design of such systems is a balancing act between security, functionality, performance, and usability,
+and this kind of leakage may be considered to be acceptable for most of the cases. 
 
+**Implementation security**
 
+As always, the security proofs are valid under assumptions, that underlying cryptography is secure.
+This implementation uses AES-CTR for symmetric encryption and AES-CMAC as a pseudorandom function.
+Both are considered to be secure right now, and their implementation is taken from well-known 
+[BouncyCastle](https://www.bouncycastle.org/) library. 
+
+The SSE design contains a lot of pitfalls to avoid.
+For example, the encrypted database should be sorted by labels, or it will leak additional information otherwise.
+The Clusion framework is implemented by the paper authors, so it hopefully all these possible 
+implementation-specific issues are considered.
+However it should be noticed, that Clusion code quality is relatively bad, it does not contain any documentation
+and unit tests, so it should not be considered to be production-ready.
 
 
 ## References
 
-1. \[[CJJJKRS14](https://eprint.iacr.org/2014/853.pdf)\]:  *Dynamic Searchable Encryption in Very-Large Databases: Data Structures and Implementation* by D. Cash, J. Jaeger, S. Jarecki, C. Jutla, H. Krawczyk, M. Rosu, M. Steiner.
+1. \[[CJJJKRS14](https://eprint.iacr.org/2014/853.pdf)\]:  *Dynamic Searchable Encryption in Very-Large Databases: Data
+ Structures and Implementation* by D. Cash, J. Jaeger, S. Jarecki, C. Jutla, H. Krawczyk, M. Rosu, M. Steiner.
 
-2. \[[KM17](https://eprint.iacr.org/2017/126.pdf)\]: :  *Boolean Searchable Symmetric Encryption with Worst-Case Sub-Linear Complexity* by S. Kamara and T. Moataz. 
+2. \[[KM17](https://eprint.iacr.org/2017/126.pdf)\]: :  *Boolean Searchable Symmetric Encryption with Worst-Case Sub-Linear Complexity*
+ by S. Kamara and T. Moataz. 
 
-3. \[[Goh03](https://eprint.iacr.org/2003/216.pdf)\]: *Secure Indexes* by E. Goh. 
-
-4. \[[ABLMTY13](https://eprint.iacr.org/2013/790.pdf)\]: *Parallelizable and
-   Authenticated Online Ciphers* by E. Andreeva, A.  Bogdanov, A. Luykx, B.
-Mennink, E. Tischhauser, and K. Yasuda. . 
-
-5. \[[BBKN07](https://cseweb.ucsd.edu/~mihir/papers/olc.pdf)\]:  *On-Line
-   Ciphers and the Hash-CBC Constructions* by M. Bellare, A. Boldyreva, L.
-Knudsen and C. Namprempre.
-
-6. \[[AKM19](https://eprint.iacr.org/2018/195.pdf)\]: *Breach-Resistant Structured Encryption* by 
-   G. Amjad, S. Kamara and T. Moataz.
-
-7. \[[FVYSHGSMC17](https://arxiv.org/pdf/1703.02014.pdf)\]: *SoK: Cryptographically Protected Database Search* 
+3. \[[FVYSHGSMC17](https://arxiv.org/pdf/1703.02014.pdf)\]: *SoK: Cryptographically Protected Database Search* 
 by B. Fuller, M. Varia, A, Yerukhimovich, E. Shen, A. Hamlin, V. Gadepally, R. Shay, J. Mitchell and R. Cunningham
 
-8. \[[CGKO06](https://eprint.iacr.org/2006/210.pdf)\]: *Searchable symmetric encryption: improved definitions and efficient constructions* 
+4. \[[CGKO06](https://eprint.iacr.org/2006/210.pdf)\]: *Searchable symmetric encryption: improved definitions and efficient constructions* 
    by R. Curtmola, J. A. Garay, S. Kamara, and R. Ostrovsky.
 
-9. \[[JJKRS13](https://dl.acm.org/doi/pdf/10.1145/2508859.2516730)\]: *Outsourced symmetric private information retrieval* 
+5. \[[JJKRS13](https://dl.acm.org/doi/pdf/10.1145/2508859.2516730)\]: *Outsourced symmetric private information retrieval* 
    by S. Jarecki, C. Jutla, H. Krawczyk, M. C. Rosu, and M. Steiner
 
-10. \[[KM18](https://img.chainnews.com/paper/7f91b993ef8bcf4fab5522de54267780.pdf)\]: *SQL on structurally-encrypted databases* 
+6. \[[KM18](https://img.chainnews.com/paper/7f91b993ef8bcf4fab5522de54267780.pdf)\]: *SQL on structurally-encrypted databases* 
    by S. Kamara and T. Moataz
    
    
 
-[FVYSHGSMC17]: https://arxiv.org/pdf/1703.02014.pdf
 [CJJJKRS14]: https://eprint.iacr.org/2014/853.pdf
 [KM17]: https://eprint.iacr.org/2017/126.pdf
-[Goh03]: https://eprint.iacr.org/2003/216.pdf
-[ABLMTY13]: https://eprint.iacr.org/2013/790.pdf
-[BBKN07]: https://cseweb.ucsd.edu/~mihir/papers/olc.pdf
-[AKM19]: https://eprint.iacr.org/2018/195.pdf
+[FVYSHGSMC17]: https://arxiv.org/pdf/1703.02014.pdf
 [CGKO06]: https://eprint.iacr.org/2006/210.pdf
+[JJKRS13]: https://dl.acm.org/doi/pdf/10.1145/2508859.2516730
+[KM18]: https://img.chainnews.com/paper/7f91b993ef8bcf4fab5522de54267780.pdf
